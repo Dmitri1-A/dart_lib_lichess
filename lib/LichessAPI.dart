@@ -100,7 +100,7 @@ class Lichess {
 
   /// Обменивает [code] на токен
   Future<String> _obtainToken(String code) async {
-    var url = Uri.parse("https://lichess.org/api/token");
+    var url = Uri.parse(lichessUri+"/api/token");
 
     // http.get(url, )
     var response = await http.post(
@@ -136,7 +136,7 @@ class Lichess {
 
   /// Удаляет текущий токен
   Future<String> deleteToken() async {
-    var url = Uri.parse("https://lichess.org/api/token");
+    var url = Uri.parse(lichessUri+"/api/token");
 
     var response = await http.delete(url, headers: {
       "Content-Type": "application/json",
@@ -144,4 +144,147 @@ class Lichess {
 
     return response.body;
   }
+
+  /// Прекращает игру с AI
+  Future<String> abortGameAI(String gameId) async {
+    var url = Uri.parse(lichessUri+"/api/board/game/"+gameId+"/abort");
+
+    var response = await http.post(
+      url,
+      headers: {
+        "authorization":"Bearer " + accessToken,
+        "accept":"application/json"
+      },
+      encoding: Encoding.getByName('utf-8'),
+    );
+    var statusCode = response.statusCode;
+
+    if (statusCode != 200) {
+      throw new Exception("Не удалось прекратить игру");
+    }
+
+    return response.body;
+  }
+
+  /// Начинает поиск игры с реальным человеком
+  Future<String> seekPlayer(String time, String increment, String days, String variant, String color) async {
+    var url = Uri.parse(lichessUri + "/api/board/seek");
+
+/*    Map<String, String> parameters = {
+      "rated": "false",
+      "time": time,
+      "increment": increment,
+      "days": days,
+      "color": color,
+      "variant": variant,
+      "ratingRange": ""
+    };
+
+    //??
+    String paramString = "";
+    
+    parameters.forEach((key, value) {
+      paramString+=key+"="+value+"&";
+    });*/
+
+
+    var response = await http.post(
+      url,
+      body: {
+        "rated": "false",
+        "time": time,
+        "increment": increment,
+        "days": days,
+        "color": color,
+        "variant": variant,
+        "ratingRange": ""
+      },
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "authorization":"Bearer " + accessToken,
+        "accept":"text/plain"
+      },
+      encoding: Encoding.getByName('utf-8'),
+    );
+    var statusCode = response.statusCode;
+
+    if (statusCode != 200) {
+      throw new Exception("Не удалось осуществить поиск");
+    }
+
+    return response.body;
+  }
+
+  ///Начинает игру с компьютером
+  Future<String> startGameAI(String level, String clockLimit, String clockIncrement,
+      String days, String color, String variant) async {
+    var url = Uri.parse(lichessUri + "/api/challenge/ai");
+
+/*    Map<String, String> parameters = {
+      "level": level,
+      "clock.limit": clockLimit,
+      "clock.increment": clockIncrement,
+      "days": days,
+      "color": color,
+      "variant": variant,
+      "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    };
+
+    //??
+    String paramString = "";
+
+    parameters.forEach((key, value) {
+      paramString+=key+"="+value+"&";
+    });*/
+
+
+    var response = await http.post(
+      url,
+      body: {
+        "level": level,
+        "clock.limit": clockLimit,
+        "clock.increment": clockIncrement,
+        "days": days,
+        "color": color,
+        "variant": variant,
+        "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+      },
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "authorization":"Bearer " + accessToken,
+        "accept":"application/json"
+      },
+      encoding: Encoding.getByName('utf-8'),
+    );
+    var statusCode = response.statusCode;
+
+    if ((statusCode != 200) && (statusCode != 201)) {
+      throw new Exception("Не удалось начать игру, код ошибки:"+statusCode.toString());
+    }
+
+    return response.body;
+  }
+  ///Отменяет игру
+  Future<String> resignGame(String gameId) async {
+    var url = Uri.parse(lichessUri + "/api/board/game/"+ gameId +"/resign");
+
+
+    var response = await http.post(
+      url,
+      headers: {
+        "authorization":"Bearer " + accessToken,
+        "accept":"application/json"
+      },
+      encoding: Encoding.getByName('utf-8'),
+    );
+    var statusCode = response.statusCode;
+
+    if (statusCode != 200) {
+      throw new Exception("Не удалось прекратить игру");
+    }
+
+    return response.body;
+  }
+
+
 }
