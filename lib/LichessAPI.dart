@@ -10,7 +10,7 @@ class Lichess {
   String lichessUri = "https://lichess.org";
 
   /// Токен авторизации
-  String _accessToken = "";
+  static String _accessToken = "";
 
   /// Возвращает токен
   String get accessToken => _accessToken;
@@ -30,6 +30,8 @@ class Lichess {
   String _codeVerifier = "";
 
   /// Возвращает Uri для получения кода авторизации (необходимо перейти по ссылке)
+  /// Запускает сервер, но не слушает запросы
+  /// После вызова этого метода нужно вызвать [getToken]
   Future<String> getAuthUrl() async {
     _redirectUri = await AppServer.serverStart();
 
@@ -69,6 +71,11 @@ class Lichess {
     return lichessUri + "/oauth" + "?" + paramString;
   }
 
+  /// Возвращает токен
+  ///
+  /// Начинает слушать запросы, приходящие на сервер.
+  /// После получения 1 запроса сервер закрывается.
+  /// Можно вызвать без await, токен сохраниться в [accessToken]
   Future<String> getToken() async {
     var code = await AppServer.getCode(_randomState);
     _accessToken = await _obtainToken(code);

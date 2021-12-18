@@ -1,12 +1,10 @@
 import 'dart:io';
 
+/// Класс для запуска сервера и прослушивания входящих запросов.
 class AppServer {
   static HttpServer? _server;
 
   /// Запускает сервер для получения запроса, который содержит code и state
-  ///
-  /// После авторизации на Lichess сервер сам получит токен
-  /// и запишет его в [accessToken]
   static Future<String> serverStart() async {
     _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
 
@@ -16,6 +14,7 @@ class AppServer {
     return "http://" + host + ":" + port;
   }
 
+  /// Обрабатывает входящий запрос и возвращает параметр code
   static Future<String> getCode(String state) async {
     String code = "";
 
