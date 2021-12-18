@@ -14,6 +14,8 @@ class Lichess {
   /// Возвращает токен
   String get accessToken => _accessToken;
 
+  set accessToken(value) => _accessToken = value;
+
   /// Uri перенаправления
   String _redirectUri = "";
 
@@ -28,7 +30,8 @@ class Lichess {
 
   /// Запускает сервер для получения запроса, который содержит code и state
   ///
-  /// После авторизации на Lichess происходит обмен полченного code на токен
+  /// После авторизации на Lichess сервер сам получит токен
+  /// и запишет его в [accessToken]
   Future<void> serverStart() async {
     var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
 
@@ -38,7 +41,9 @@ class Lichess {
       if (parameters['state'] == _randomState) {
         if (parameters.containsKey("code")) {
           request.response.write('Теперь вы можете закрыть браузер');
+
           server.close();
+          _redirectUri = "";
 
           String code = parameters['code'] ?? "";
           _obtainToken(code);
@@ -46,7 +51,6 @@ class Lichess {
       } else {
         request.response
             .write('Возможно запрос был перехвачен, попробуйте ещё раз');
-        request.response.close();
       }
 
       request.response.close();
@@ -121,14 +125,6 @@ class Lichess {
     if (response.statusCode == 200) {
       dynamic data = jsonDecode(response.body);
       _accessToken = data['access_token'];
-
-      print("token: " + _accessToken);
-
-      deleteToken();
-
-      print("token: " + _accessToken);
-    } else {
-      print(response.body);
     }
 
     return _accessToken;
@@ -138,9 +134,8 @@ class Lichess {
   Future<String> deleteToken() async {
     var url = Uri.parse("https://lichess.org/api/token");
 
-    var response = await http.delete(url, headers: {
-      "Content-Type": "application/json",
-    });
+    var response = await http
+        .delete(url, headers: {"authorization": "Bearer " + _accessToken});
 
     return response.body;
   }
