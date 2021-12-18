@@ -3,8 +3,14 @@ import 'LichessAPI.dart';
 Future<void> main() async {
   Lichess lichess = new Lichess();
 
-  lichess.accessToken = "lio_KAqS4lvZXqWzzV0g4cm0p4upYPuKiMp9";
-  // String url = await lichess.getAuthUrl();
-  // print(url);
-  lichess.deleteToken();
+  String url = await lichess.getAuthUrl();
+  print(url);
+
+  var token = await lichess.getToken();
+
+  print("token after getToken method: " + token);
+
+  await lichess.deleteToken();
+
+  print("token after delete method: " + lichess.accessToken);
 }

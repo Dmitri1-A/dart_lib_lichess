@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
-import 'OAuthGenerators.dart';
 import 'package:http/http.dart' as http;
+
+import 'OAuthGenerators.dart';
+import 'AppServer.dart';
 
 /// Класс для взаимодействия с LichessAPI
 class Lichess {
@@ -28,43 +29,9 @@ class Lichess {
   /// Code verifier для получения codeChallenge
   String _codeVerifier = "";
 
-  /// Запускает сервер для получения запроса, который содержит code и state
-  ///
-  /// После авторизации на Lichess сервер сам получит токен
-  /// и запишет его в [accessToken]
-  Future<void> serverStart() async {
-    var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
-
-    server.forEach((HttpRequest request) {
-      var parameters = request.uri.queryParameters;
-
-      if (parameters['state'] == _randomState) {
-        if (parameters.containsKey("code")) {
-          request.response.write('Теперь вы можете закрыть браузер');
-
-          server.close();
-          _redirectUri = "";
-
-          String code = parameters['code'] ?? "";
-          _obtainToken(code);
-        }
-      } else {
-        request.response
-            .write('Возможно запрос был перехвачен, попробуйте ещё раз');
-      }
-
-      request.response.close();
-    });
-
-    _redirectUri =
-        "http://" + server.address.host + ":" + server.port.toString();
-  }
-
   /// Возвращает Uri для получения кода авторизации (необходимо перейти по ссылке)
   Future<String> getAuthUrl() async {
-    if (_redirectUri.isEmpty) {
-      await serverStart();
-    }
+    _redirectUri = await AppServer.serverStart();
 
     String codeChallengeMethod = "S256";
     String responseType = "code";
@@ -102,10 +69,17 @@ class Lichess {
     return lichessUri + "/oauth" + "?" + paramString;
   }
 
+  Future<String> getToken() async {
+    var code = await AppServer.getCode(_randomState);
+    _accessToken = await _obtainToken(code);
+
+    return _accessToken;
+  }
+
   /// Обменивает [code] на токен
   Future<String> _obtainToken(String code) async {
     var url = Uri.parse("https://lichess.org/api/token");
-
+    dynamic data;
     // http.get(url, )
     var response = await http.post(
       url,
@@ -123,7 +97,7 @@ class Lichess {
     );
 
     if (response.statusCode == 200) {
-      dynamic data = jsonDecode(response.body);
+      data = jsonDecode(response.body);
       _accessToken = data['access_token'];
     }
 
@@ -136,6 +110,10 @@ class Lichess {
 
     var response = await http
         .delete(url, headers: {"authorization": "Bearer " + _accessToken});
+
+    if (response.statusCode == 204) {
+      _accessToken = "";
+    }
 
     return response.body;
   }
