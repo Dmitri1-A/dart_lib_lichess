@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
-import 'OAuthGenerators.dart';
 import 'package:http/http.dart' as http;
+
+import 'OAuthGenerators.dart';
+import 'AppServer.dart';
 
 /// Класс для взаимодействия с LichessAPI
 class Lichess {
@@ -9,10 +10,12 @@ class Lichess {
   String lichessUri = "https://lichess.org";
 
   /// Токен авторизации
-  String _accessToken = "";
+  static String _accessToken = "";
 
   /// Возвращает токен
   String get accessToken => _accessToken;
+
+  set accessToken(value) => _accessToken = value;
 
   /// Uri перенаправления
   String _redirectUri = "";
@@ -26,41 +29,11 @@ class Lichess {
   /// Code verifier для получения codeChallenge
   String _codeVerifier = "";
 
-  /// Запускает сервер для получения запроса, который содержит code и state
-  ///
-  /// После авторизации на Lichess происходит обмен полченного code на токен
-  Future<void> serverStart() async {
-    var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
-
-    server.forEach((HttpRequest request) {
-      var parameters = request.uri.queryParameters;
-
-      if (parameters['state'] == _randomState) {
-        if (parameters.containsKey("code")) {
-          request.response.write('Теперь вы можете закрыть браузер');
-          server.close();
-
-          String code = parameters['code'] ?? "";
-          _obtainToken(code);
-        }
-      } else {
-        request.response
-            .write('Возможно запрос был перехвачен, попробуйте ещё раз');
-        request.response.close();
-      }
-
-      request.response.close();
-    });
-
-    _redirectUri =
-        "http://" + server.address.host + ":" + server.port.toString();
-  }
-
   /// Возвращает Uri для получения кода авторизации (необходимо перейти по ссылке)
+  /// Запускает сервер, но не слушает запросы
+  /// После вызова этого метода нужно вызвать [getToken]
   Future<String> getAuthUrl() async {
-    if (_redirectUri.isEmpty) {
-      await serverStart();
-    }
+    _redirectUri = await AppServer.serverStart();
 
     String codeChallengeMethod = "S256";
     String responseType = "code";
@@ -98,11 +71,23 @@ class Lichess {
     return lichessUri + "/oauth" + "?" + paramString;
   }
 
+  /// Возвращает токен
+  ///
+  /// Начинает слушать запросы, приходящие на сервер.
+  /// После получения 1 запроса сервер закрывается.
+  /// Можно вызвать без await, токен сохраниться в [accessToken]
+  Future<String> getToken() async {
+    var code = await AppServer.getCode(_randomState);
+    _accessToken = await _obtainToken(code);
+
+    return _accessToken;
+  }
+
   /// Обменивает [code] на токен
   Future<String> _obtainToken(String code) async {
-    var url = Uri.parse(lichessUri+"/api/token");
+    dynamic data;
+    var url = Uri.parse(lichessUri + "/api/token");
 
-    // http.get(url, )
     var response = await http.post(
       url,
       body: {
@@ -119,16 +104,8 @@ class Lichess {
     );
 
     if (response.statusCode == 200) {
-      dynamic data = jsonDecode(response.body);
+      data = jsonDecode(response.body);
       _accessToken = data['access_token'];
-
-      print("token: " + _accessToken);
-
-      deleteToken();
-
-      print("token: " + _accessToken);
-    } else {
-      print(response.body);
     }
 
     return _accessToken;
@@ -136,27 +113,31 @@ class Lichess {
 
   /// Удаляет текущий токен
   Future<String> deleteToken() async {
-    var url = Uri.parse(lichessUri+"/api/token");
+    var url = Uri.parse(lichessUri + "/api/token");
 
-    var response = await http.delete(url, headers: {
-      "Content-Type": "application/json",
-    });
+    var response = await http
+        .delete(url, headers: {"authorization": "Bearer " + _accessToken});
+
+    if (response.statusCode == 204) {
+      _accessToken = "";
+    }
 
     return response.body;
   }
 
   /// Прекращает игру с AI
   Future<String> abortGameAI(String gameId) async {
-    var url = Uri.parse(lichessUri+"/api/board/game/"+gameId+"/abort");
+    var url = Uri.parse(lichessUri + "/api/board/game/" + gameId + "/abort");
 
     var response = await http.post(
       url,
       headers: {
-        "authorization":"Bearer " + accessToken,
-        "accept":"application/json"
+        "authorization": "Bearer " + accessToken,
+        "accept": "application/json"
       },
       encoding: Encoding.getByName('utf-8'),
     );
+
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
@@ -167,26 +148,9 @@ class Lichess {
   }
 
   /// Начинает поиск игры с реальным человеком
-  Future<String> seekPlayer(String time, String increment, String days, String variant, String color) async {
+  Future<String> seekPlayer(String time, String increment, String days,
+      String variant, String color) async {
     var url = Uri.parse(lichessUri + "/api/board/seek");
-
-/*    Map<String, String> parameters = {
-      "rated": "false",
-      "time": time,
-      "increment": increment,
-      "days": days,
-      "color": color,
-      "variant": variant,
-      "ratingRange": ""
-    };
-
-    //??
-    String paramString = "";
-    
-    parameters.forEach((key, value) {
-      paramString+=key+"="+value+"&";
-    });*/
-
 
     var response = await http.post(
       url,
@@ -201,11 +165,12 @@ class Lichess {
       },
       headers: {
         "content-type": "application/x-www-form-urlencoded",
-        "authorization":"Bearer " + accessToken,
-        "accept":"text/plain"
+        "authorization": "Bearer " + accessToken,
+        "accept": "text/plain"
       },
       encoding: Encoding.getByName('utf-8'),
     );
+
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
@@ -215,28 +180,73 @@ class Lichess {
     return response.body;
   }
 
-  ///Начинает игру с компьютером
-  Future<String> startGameAI(String level, String clockLimit, String clockIncrement,
-      String days, String color, String variant) async {
+  /// Начинает игру с компьютером.
+  ///
+  /// [level] - уровень от 1 .. 8
+  ///
+  /// Как обращаться к полям можно посмотреть здесь [startGameAI] (подсказка надо будет удалить)
+  ///
+  /// Возвращаемая json строка преобразуется в dynamic.
+  /// Обращаться к полям можно следующим образом:
+  ///
+  ///```dart
+  ///   var lichess = new Lichess();
+  ///   //... здесь может быть установка токена
+  ///   var gameData = await lichess.startGameAI();
+  ///   gameData["id"]; // Доступ к полю
+  ///```
+  ///
+  /// Формат json:
+  ///
+  ///```json
+  ///{
+  ///   "id": "q7ZvsdUF",
+  ///   "rated": true,
+  ///   "variant": "standard",
+  ///   "speed": "blitz",
+  ///   "perf": "blitz",
+  ///   "createdAt": 1514505150384,
+  ///   "lastMoveAt": 1514505592843,
+  ///   "status": "draw",
+  ///   "players": {
+  ///     "white": {
+  ///       "user": {
+  ///         "name": "Lance5500",
+  ///         "title": "LM",
+  ///         "patron": true,
+  ///         "id": "lance5500"
+  ///       },
+  ///       "rating": 2389,
+  ///       "ratingDiff": 4
+  ///     },
+  ///     "black": {
+  ///       "user": {
+  ///         "name": "TryingHard87",
+  ///         "id": "tryinghard87"
+  ///       },
+  ///       "rating": 2498,
+  ///       "ratingDiff": -4
+  ///     }
+  ///   },
+  ///   "opening": {
+  ///     "eco": "D31",
+  ///     "name": "Semi-Slav Defense: Marshall Gambit",
+  ///     "ply": 7
+  ///   },
+  ///   "moves": "d4 d5 c4 c6 Nc3 e6 e4 Nd7 exd5 cxd5 cxd5 exd5 Nxd5 Nb6 Bb5+ Bd7 Qe2+ Ne7 Nxb6 Qxb6 Bxd7+ Kxd7 Nf3 Qa6 Ne5+ Ke8 Qf3 f6 Nd3 Qc6 Qe2 Kf7 O-O Kg8 Bd2 Re8 Rac1 Nf5 Be3 Qe6 Rfe1 g6 b3 Bd6 Qd2 Kf7 Bf4 Qd7 Bxd6 Nxd6 Nc5 Rxe1+ Rxe1 Qc6 f3 Re8 Rxe8 Nxe8 Kf2 Nc7 Qb4 b6 Qc4+ Nd5 Nd3 Qe6 Nb4 Ne7 Qxe6+ Kxe6 Ke3 Kd6 g3 h6 Kd3 h5 Nc2 Kd5 a3 Nc6 Ne3+ Kd6 h4 Nd8 g4 Ne6 Ke4 Ng7 Nc4+ Ke6 d5+ Kd7 a4 g5 gxh5 Nxh5 hxg5 fxg5 Kf5 Nf4 Ne3 Nh3 Kg4 Ng1 Nc4 Kc7 Nd2 Kd6 Kxg5 Kxd5 f4 Nh3+ Kg4 Nf2+ Kf3 Nd3 Ke3 Nc5 Kf3 Ke6 Ke3 Kf5 Kd4 Ne6+ Kc4",
+  ///   "clock": {
+  ///     "initial": 300,
+  ///     "increment": 3,
+  ///     "totalTime": 420
+  ///   }
+  /// }
+  ///```
+  ///
+  /// Также формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/challengeAi
+  Future<dynamic> startGameAI(String level, String clockLimit,
+      String clockIncrement, String days, String color, String variant) async {
     var url = Uri.parse(lichessUri + "/api/challenge/ai");
-
-/*    Map<String, String> parameters = {
-      "level": level,
-      "clock.limit": clockLimit,
-      "clock.increment": clockIncrement,
-      "days": days,
-      "color": color,
-      "variant": variant,
-      "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-    };
-
-    //??
-    String paramString = "";
-
-    parameters.forEach((key, value) {
-      paramString+=key+"="+value+"&";
-    });*/
-
 
     var response = await http.post(
       url,
@@ -251,29 +261,30 @@ class Lichess {
       },
       headers: {
         "content-type": "application/x-www-form-urlencoded",
-        "authorization":"Bearer " + accessToken,
-        "accept":"application/json"
+        "authorization": "Bearer " + _accessToken,
+        "accept": "application/json"
       },
       encoding: Encoding.getByName('utf-8'),
     );
     var statusCode = response.statusCode;
 
     if ((statusCode != 200) && (statusCode != 201)) {
-      throw new Exception("Не удалось начать игру, код ошибки:"+statusCode.toString());
+      throw new Exception(
+          "Не удалось начать игру, код ошибки:" + statusCode.toString());
     }
 
-    return response.body;
+    return jsonDecode(response.body);
   }
+
   ///Отменяет игру
   Future<String> resignGame(String gameId) async {
-    var url = Uri.parse(lichessUri + "/api/board/game/"+ gameId +"/resign");
-
+    var url = Uri.parse(lichessUri + "/api/board/game/" + gameId + "/resign");
 
     var response = await http.post(
       url,
       headers: {
-        "authorization":"Bearer " + accessToken,
-        "accept":"application/json"
+        "authorization": "Bearer " + accessToken,
+        "accept": "application/json"
       },
       encoding: Encoding.getByName('utf-8'),
     );
@@ -285,6 +296,4 @@ class Lichess {
 
     return response.body;
   }
-
-
 }

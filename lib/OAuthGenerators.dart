@@ -7,38 +7,35 @@ class OAuthGenerators {
   /// Генерирует CodeVerifier
   static String generateRandomCodeVerifier() {
     Random random = new Random();
-    const String chars = "abcdefghijklmnopqrstuvwxyz123456789-_";
 
-    var code = List.generate(
-        128, (index) => chars[random.nextInt(chars.length)],
-        growable: false);
+    var bytes =
+        List.generate(64, (index) => random.nextInt(128), growable: false);
 
-    return code.join("");
-  }
-
-  static String encodeToString(String str) {
-    Codec<String, String> stringToBase64Url = utf8.fuse(base64Url);
-    String encoded = stringToBase64Url.encode(str);
-    return encoded
-        .replaceAll(RegExp(r"="), "")
-        .replaceAll(RegExp(r"\\+"), "-")
-        .replaceAll(RegExp(r"\\/"), "_");
+    return encodeToString(bytes);
   }
 
   /// Генерирует CodeChallenge
   static String generateCodeChallenge(String codeVerifier) {
-    var bytes = utf8.encode(codeVerifier);
+    var bytes = ascii.encode(codeVerifier);
     Digest digest = sha256.convert(bytes);
 
-    return encodeToString(digest.bytes.join(""));
+    return encodeToString(digest.bytes);
   }
 
   /// Генерирует State
   static String generateRandomState() {
     Random random = new Random();
     var bytes =
-        List.generate(16, (index) => random.nextInt(16), growable: false);
+        List.generate(16, (index) => random.nextInt(128), growable: false);
 
-    return encodeToString(bytes.join("")).substring(0, 8);
+    return encodeToString(bytes).substring(0, 8);
+  }
+
+  /// Кодирует [bytes] по Base64Url
+  static String encodeToString(List<int> bytes) {
+    return base64UrlEncode(bytes)
+        .replaceAll(RegExp(r"="), "")
+        .replaceAll(RegExp(r"\\+"), "-")
+        .replaceAll(RegExp(r"\\/"), "_");
   }
 }
