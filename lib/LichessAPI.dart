@@ -137,13 +137,34 @@ class Lichess {
   }
 
   /// Прекращает игру с AI
+  /// [gameId] - Идентификатор игры
+  ///
+  ///Возвращает JSON строку
+  ///
+  ///Если запрос был выполнен успешно:
+  ///```json
+  ///{
+  /// "ok": true
+  /// }
+  ///```
+  ///
+  ///Если запрос не был выполнен:
+  ///
+  ///```json
+  ///{
+  /// "error": "This request is invalid because [...]"
+  /// }
+  ///```
+  ///
+  /// Также формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/boardGameAbort
   Future<String> abortGameAI(String gameId) async {
     var url = Uri.parse(lichessUri + "/api/board/game/" + gameId + "/abort");
 
     var response = await http.post(
       url,
       headers: {
-        "authorization": "Bearer " + accessToken,
+        "authorization": "Bearer " + _accessToken,
         "accept": "application/json"
       },
       encoding: Encoding.getByName('utf-8'),
@@ -158,7 +179,16 @@ class Lichess {
     return response.body;
   }
 
+
   /// Начинает поиск игры с реальным человеком
+  ///
+  ///[time] - [ 0 .. 180 ] Начальное время в минутах
+  ///[increment] - [ 0 .. 180 ] время в секундах
+  ///[days] - Enum: 1 3 5 7 10 14 дней на ход
+  ///[variant] - "standard" (default) "chess960" "crazyhouse" "antichess" "atomic" "horde" "kingOfTheHill" "racingKings" "threeCheck"
+  ///[color] - "random" "white" "black"
+  ///
+  ///Возвращает пустую строку, если запрос выполнен успешно.
   Future<String> seekPlayer(String time, String increment, String days,
       String variant, String color) async {
     var url = Uri.parse(lichessUri + "/api/board/seek");
@@ -176,7 +206,7 @@ class Lichess {
       },
       headers: {
         "content-type": "application/x-www-form-urlencoded",
-        "authorization": "Bearer " + accessToken,
+        "authorization": "Bearer " + _accessToken,
         "accept": "text/plain"
       },
       encoding: Encoding.getByName('utf-8'),
@@ -194,6 +224,11 @@ class Lichess {
   /// Начинает игру с компьютером.
   ///
   /// [level] - уровень от 1 .. 8
+  /// [clockLimit] - [ 0 .. 10800 ], если пустой, то игра по переписке
+  /// [clockIncrement] - [ 0 .. 60 ] увеличение времени в секундах.
+  /// [days] - [ 1 .. 15 ] дней на ход, настройки времени должны быть пропущены
+  /// [color] - "random" "white" "black"
+  /// [variant] - "standard" (default) "chess960" "crazyhouse" "antichess" "atomic" "horde" "kingOfTheHill" "racingKings" "threeCheck"
   ///
   /// Как обращаться к полям можно посмотреть здесь [startGameAI] (подсказка надо будет удалить)
   ///
@@ -288,13 +323,34 @@ class Lichess {
   }
 
   ///Отменяет игру
+  /// [gameId] - Идентификатор игры
+  ///
+  ///Возвращает JSON строку
+  ///
+  ///Если запрос был выполнен успешно:
+  ///```json
+  ///{
+  /// "ok": true
+  /// }
+  ///```
+  ///
+  ///Если запрос не был выполнен:
+  ///
+  ///```json
+  ///{
+  /// "error": "This request is invalid because [...]"
+  /// }
+  ///```
+  ///
+  /// Также формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/boardGameResign
   Future<String> resignGame(String gameId) async {
     var url = Uri.parse(lichessUri + "/api/board/game/" + gameId + "/resign");
 
     var response = await http.post(
       url,
       headers: {
-        "authorization": "Bearer " + accessToken,
+        "authorization": "Bearer " + _accessToken,
         "accept": "application/json"
       },
       encoding: Encoding.getByName('utf-8'),
@@ -303,6 +359,49 @@ class Lichess {
 
     if (statusCode != 200) {
       throw new LichessException("Не удалось прекратить игру");
+    }
+
+    return response.body;
+  }
+
+  ///Отменяет игру
+  /// [gameId] - Идентификатор игры
+  /// [move] - Ход в формате UCI
+  ///
+  ///Возвращает JSON строку
+  ///
+  ///Если запрос был выполнен успешно:
+  ///```json
+  ///{
+  /// "ok": true
+  /// }
+  ///```
+  ///
+  ///Если запрос не был выполнен:
+  ///
+  ///```json
+  ///{
+  /// "error": "This request is invalid because [...]"
+  /// }
+  ///```
+  ///
+  /// Также формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/boardGameMove
+  Future<String> makeMove(String gameId,String move) async {
+    var url = Uri.parse(lichessUri + "/api/board/game/"+ gameId +"/move/" + move);
+
+    var response = await http.post(
+      url,
+      headers: {
+        "authorization": "Bearer " + _accessToken,
+        "accept": "application/json"
+      },
+      encoding: Encoding.getByName('utf-8'),
+    );
+    var statusCode = response.statusCode;
+
+    if (statusCode != 200) {
+      throw new Exception("Не удалось сделать ход");
     }
 
     return response.body;
