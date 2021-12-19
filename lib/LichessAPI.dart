@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import 'OAuthGenerators.dart';
 import 'AppServer.dart';
+import 'LichessExeption.dart';
 
 /// Класс для взаимодействия с LichessAPI
 class Lichess {
@@ -78,7 +79,12 @@ class Lichess {
   /// Можно вызвать без await, токен сохраниться в [accessToken]
   Future<String> getToken() async {
     var code = await AppServer.getCode(_randomState);
-    _accessToken = await _obtainToken(code);
+
+    try {
+      _accessToken = await _obtainToken(code);
+    } on LichessException catch (error) {
+      throw error;
+    }
 
     return _accessToken;
   }
@@ -106,6 +112,10 @@ class Lichess {
     if (response.statusCode == 200) {
       data = jsonDecode(response.body);
       _accessToken = data['access_token'];
+    } else {
+      throw LichessException(
+          "Не удалось обменять код на токен. Статус код запроса: " +
+              response.statusCode.toString());
     }
 
     return _accessToken;
@@ -120,7 +130,8 @@ class Lichess {
 
     if (response.statusCode == 204) {
       _accessToken = "";
-    }
+    } else
+      throw new LichessException("Не удалось удалить токен");
 
     return response.body;
   }
@@ -141,7 +152,7 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception("Не удалось прекратить игру");
+      throw new LichessException("Не удалось прекратить игру");
     }
 
     return response.body;
@@ -174,7 +185,7 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception("Не удалось осуществить поиск");
+      throw new LichessException("Не удалось осуществить поиск игрока");
     }
 
     return response.body;
@@ -269,7 +280,7 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if ((statusCode != 200) && (statusCode != 201)) {
-      throw new Exception(
+      throw new LichessException(
           "Не удалось начать игру, код ошибки:" + statusCode.toString());
     }
 
@@ -291,7 +302,7 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception("Не удалось прекратить игру");
+      throw new LichessException("Не удалось прекратить игру");
     }
 
     return response.body;
