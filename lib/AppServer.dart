@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'LichessAPI.dart';
 
 /// Класс для запуска сервера и прослушивания входящих запросов.
+///
+/// Используется классом [Lichess]
 class AppServer {
   static HttpServer? _server;
 

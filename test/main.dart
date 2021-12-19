@@ -1,7 +1,5 @@
-import 'package:lichess/LichessExeption.dart';
-
-import 'LichessAPI.dart';
-import 'LichessExeption.dart';
+import '../lib/LichessAPI.dart';
+import '../lib/LichessExeption.dart';
 
 Future<void> main() async {
   Lichess lichess = new Lichess();
@@ -18,7 +16,7 @@ Future<void> main() async {
   // print(gameData["id"]);
 
   try {
-    lichess.resignGame("1");
+    await lichess.resignGame("1");
   } on LichessException catch (e) {
     print(e.message);
   }

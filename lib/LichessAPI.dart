@@ -77,6 +77,8 @@ class Lichess {
   /// Начинает слушать запросы, приходящие на сервер.
   /// После получения 1 запроса сервер закрывается.
   /// Можно вызвать без await, токен сохраниться в [accessToken]
+  ///
+  /// Может вернуть исключение [LichessException] при ошибке
   Future<String> getToken() async {
     var code = await AppServer.getCode(_randomState);
 
@@ -90,6 +92,8 @@ class Lichess {
   }
 
   /// Обменивает [code] на токен
+  ///
+  /// Может вернуть исключение [LichessException] при ошибке
   Future<String> _obtainToken(String code) async {
     dynamic data;
     var url = Uri.parse(lichessUri + "/api/token");
@@ -122,7 +126,9 @@ class Lichess {
   }
 
   /// Удаляет текущий токен
-  Future<String> deleteToken() async {
+  ///
+  /// Может вернуть исключение [LichessException] при ошибке
+  Future<void> deleteToken() async {
     var url = Uri.parse(lichessUri + "/api/token");
 
     var response = await http
@@ -131,34 +137,38 @@ class Lichess {
     if (response.statusCode == 204) {
       _accessToken = "";
     } else
-      throw new LichessException("Не удалось удалить токен");
-
-    return response.body;
+      throw new LichessException(
+          "Не удалось удалить токен. Статус код запроса: " +
+              response.statusCode.toString());
   }
 
   /// Прекращает игру с AI
+  ///
   /// [gameId] - Идентификатор игры
   ///
-  ///Возвращает JSON строку
+  /// Метод может вернуть исключение [LichessException]
   ///
-  ///Если запрос был выполнен успешно:
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
+  ///
+  /// Если запрос был выполнен успешно:
   ///```json
-  ///{
-  /// "ok": true
-  /// }
+  /// {
+  ///  "ok": true
+  ///  }
   ///```
   ///
-  ///Если запрос не был выполнен:
+  /// Если запрос не был выполнен:
   ///
   ///```json
-  ///{
-  /// "error": "This request is invalid because [...]"
+  /// {
+  ///  "error": "This request is invalid because [...]"
   /// }
   ///```
   ///
   /// Также формат возвращаемых данных можно посмотреть по ссылке:
   /// * https://lichess.org/api#operation/boardGameAbort
-  Future<String> abortGameAI(String gameId) async {
+  Future<dynamic> abortGameAI(String gameId) async {
     var url = Uri.parse(lichessUri + "/api/board/game/" + gameId + "/abort");
 
     var response = await http.post(
@@ -173,24 +183,30 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new LichessException("Не удалось прекратить игру");
+      throw new LichessException(
+          "Не удалось прекратить игру. Статус код запроса: " +
+              response.statusCode.toString());
     }
 
-    return response.body;
+    return jsonDecode(response.body);
   }
-
 
   /// Начинает поиск игры с реальным человеком
   ///
-  ///[time] - [ 0 .. 180 ] Начальное время в минутах
-  ///[increment] - [ 0 .. 180 ] время в секундах
-  ///[days] - Enum: 1 3 5 7 10 14 дней на ход
-  ///[variant] - "standard" (default) "chess960" "crazyhouse" "antichess" "atomic" "horde" "kingOfTheHill" "racingKings" "threeCheck"
-  ///[color] - "random" "white" "black"
+  /// [time] - [ 0 .. 180 ] Начальное время в минутах
   ///
-  ///Возвращает пустую строку, если запрос выполнен успешно.
-  Future<String> seekPlayer(String time, String increment, String days,
-      String variant, String color) async {
+  /// [increment] - [ 0 .. 180 ] время в секундах
+  ///
+  /// [days] - Enum: 1 3 5 7 10 14 дней на ход
+  ///
+  /// [variant] - "standard" (default) "chess960" "crazyhouse" "antichess"
+  /// "atomic" "horde" "kingOfTheHill" "racingKings" "threeCheck"
+  ///
+  /// [color] - "random" "white" "black"
+  ///
+  /// Если не удалось осуществить поиск генерирует исключение [LichessException]
+  void seekPlayer(String time, String increment, String days, String variant,
+      String color) async {
     var url = Uri.parse(lichessUri + "/api/board/seek");
 
     var response = await http.post(
@@ -215,29 +231,32 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new LichessException("Не удалось осуществить поиск игрока");
+      throw new LichessException(
+          "Не удалось осуществить поиск игрока. Статус код запроса: " +
+              response.statusCode.toString());
     }
-
-    return response.body;
   }
 
   /// Начинает игру с компьютером.
   ///
   /// [level] - уровень от 1 .. 8
-  /// [clockLimit] - [ 0 .. 10800 ], если пустой, то игра по переписке
-  /// [clockIncrement] - [ 0 .. 60 ] увеличение времени в секундах.
-  /// [days] - [ 1 .. 15 ] дней на ход, настройки времени должны быть пропущены
-  /// [color] - "random" "white" "black"
-  /// [variant] - "standard" (default) "chess960" "crazyhouse" "antichess" "atomic" "horde" "kingOfTheHill" "racingKings" "threeCheck"
   ///
-  /// Как обращаться к полям можно посмотреть здесь [startGameAI] (подсказка надо будет удалить)
+  /// [clockLimit] - [ 0 .. 10800 ], если пустой, то игра по переписке
+  ///
+  /// [clockIncrement] - [ 0 .. 60 ] увеличение времени в секундах.
+  ///
+  /// [days] - [ 1 .. 15 ] дней на ход, настройки времени должны быть пропущены
+  ///
+  /// [color] - "random" "white" "black"
+  ///
+  /// [variant] - "standard" (default) "chess960" "crazyhouse" "antichess" "atomic" "horde" "kingOfTheHill" "racingKings" "threeCheck"
   ///
   /// Возвращаемая json строка преобразуется в dynamic.
   /// Обращаться к полям можно следующим образом:
   ///
   ///```dart
   ///   var lichess = new Lichess();
-  ///   //... здесь может быть установка токена
+  ///   //... здесь может быть установка токена или его получение
   ///   var gameData = await lichess.startGameAI();
   ///   gameData["id"]; // Доступ к полю
   ///```
@@ -323,11 +342,14 @@ class Lichess {
   }
 
   ///Отменяет игру
+  ///
   /// [gameId] - Идентификатор игры
   ///
-  ///Возвращает JSON строку
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
   ///
   ///Если запрос был выполнен успешно:
+  ///
   ///```json
   ///{
   /// "ok": true
@@ -344,7 +366,7 @@ class Lichess {
   ///
   /// Также формат возвращаемых данных можно посмотреть по ссылке:
   /// * https://lichess.org/api#operation/boardGameResign
-  Future<String> resignGame(String gameId) async {
+  Future<dynamic> resignGame(String gameId) async {
     var url = Uri.parse(lichessUri + "/api/board/game/" + gameId + "/resign");
 
     var response = await http.post(
@@ -358,19 +380,25 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new LichessException("Не удалось прекратить игру");
+      throw new LichessException(
+          "Не удалось прекратить игру. Статус код запроса: " +
+              response.statusCode.toString());
     }
 
-    return response.body;
+    return jsonDecode(response.body);
   }
 
-  ///Отменяет игру
+  /// Сделать ход в игре
+  ///
   /// [gameId] - Идентификатор игры
+  ///
   /// [move] - Ход в формате UCI
   ///
-  ///Возвращает JSON строку
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
   ///
   ///Если запрос был выполнен успешно:
+  ///
   ///```json
   ///{
   /// "ok": true
@@ -387,8 +415,9 @@ class Lichess {
   ///
   /// Также формат возвращаемых данных можно посмотреть по ссылке:
   /// * https://lichess.org/api#operation/boardGameMove
-  Future<String> makeMove(String gameId,String move) async {
-    var url = Uri.parse(lichessUri + "/api/board/game/"+ gameId +"/move/" + move);
+  Future<dynamic> makeMove(String gameId, String move) async {
+    var url =
+        Uri.parse(lichessUri + "/api/board/game/" + gameId + "/move/" + move);
 
     var response = await http.post(
       url,
@@ -401,9 +430,10 @@ class Lichess {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception("Не удалось сделать ход");
+      throw new Exception("Не удалось сделать ход. Статус код запроса: " +
+          response.statusCode.toString());
     }
 
-    return response.body;
+    return jsonDecode(response.body);
   }
 }

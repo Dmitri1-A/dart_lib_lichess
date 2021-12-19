@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="API docs for the makeMove method from the Lichess class, for the Dart programming language.">
+  <title>makeMove method - Lichess class - LichessAPI library - Dart API</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <link rel="stylesheet" href="../../static-assets/github.css?v1">
+  <link rel="stylesheet" href="../../static-assets/styles.css?v1">
+  <link rel="icon" href="../../static-assets/favicon.png?v1">
+
+  
+</head>
+
+
+<body data-base-href="../../"
+      data-using-base-href="false">
+
+<div id="overlay-under-drawer"></div>
+
+<header id="title">
+  <button id="sidenav-left-toggle" type="button">&nbsp;</button>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li><a href="../../index.html">lichess</a></li>
+    <li><a href="../../LichessAPI/LichessAPI-library.html">LichessAPI</a></li>
+    <li><a href="../../LichessAPI/Lichess-class.html">Lichess</a></li>
+    <li class="self-crumb">makeMove method</li>
+  </ol>
+  <div class="self-name">makeMove</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<main>
+
+
+  <div id="dartdoc-main-content" class="main-content">
+      <div>
+<h1><span class="kind-method">makeMove</span> method 
+    <a href="https://dart.dev/null-safety" class="feature feature-null-safety" title="Supports the null safety language feature.">Null safety</a>
+</h1></div>
+
+    <section class="multi-line-signature">
+      
+
+<span class="returntype"><a href="https://api.flutter.dev/flutter/dart-async/Future-class.html">Future</a></span>
+<span class="name ">makeMove</span>(<wbr><ol class="parameter-list"><li><span class="parameter" id="makeMove-param-gameId"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">gameId</span>, </span></li>
+<li><span class="parameter" id="makeMove-param-move"><span class="type-annotation"><a href="https://api.flutter.dev/flutter/dart-core/String-class.html">String</a></span> <span class="parameter-name">move</span></span></li>
+</ol>)
+
+      
+
+    </section>
+    
+<section class="desc markdown">
+  <p>Сделать ход в игре</p>
+<p><code>gameId</code> - Идентификатор игры</p>
+<p><code>move</code> - Ход в формате UCI</p>
+<p>Возвращает <code>dynamic</code>. Как работать с возвращаемыми данными смотрите
+в описании метода <a href="../../LichessAPI/Lichess/startGameAI.html">startGameAI</a></p>
+<p>Если запрос был выполнен успешно:</p>
+<pre class="language-json"><code class="language-json">{
+"ok": true
+}
+</code></pre>
+<p>Если запрос не был выполнен:</p>
+<pre class="language-json"><code class="language-json">{
+"error": "This request is invalid because [...]"
+}
+</code></pre>
+<p>Также формат возвращаемых данных можно посмотреть по ссылке:</p>
+<ul>
+<li><a href="https://lichess.org/api#operation/boardGameMove">https://lichess.org/api#operation/boardGameMove</a></li>
+</ul>
+</section>
+
+
+    
+<section class="summary source-code" id="source">
+  <h2><span>Implementation</span></h2>
+  <pre class="language-dart"><code class="language-dart">Future&lt;dynamic&gt; makeMove(String gameId, String move) async {
+  var url =
+      Uri.parse(lichessUri + &quot;&#47;api&#47;board&#47;game&#47;&quot; + gameId + &quot;&#47;move&#47;&quot; + move);
+
+  var response = await http.post(
+    url,
+    headers: {
+      &quot;authorization&quot;: &quot;Bearer &quot; + _accessToken,
+      &quot;accept&quot;: &quot;application&#47;json&quot;
+    },
+    encoding: Encoding.getByName(&#39;utf-8&#39;),
+  );
+  var statusCode = response.statusCode;
+
+  if (statusCode != 200) {
+    throw new Exception(&quot;Не удалось сделать ход. Статус код запроса: &quot; +
+        response.statusCode.toString());
+  }
+
+  return jsonDecode(response.body);
+}</code></pre>
+</section>
+
+
+  </div> <!-- /.main-content -->
+
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+  <li><a href="../../index.html">lichess</a></li>
+  <li><a href="../../LichessAPI/LichessAPI-library.html">LichessAPI</a></li>
+  <li><a href="../../LichessAPI/Lichess-class.html">Lichess</a></li>
+  <li class="self-crumb">makeMove method</li>
+</ol>
+
+
+    <h5>Lichess class</h5>
+    <ol>
+
+    <li class="section-title"><a href="../../LichessAPI/Lichess-class.html#constructors">Constructors</a></li>
+    <li><a href="../../LichessAPI/Lichess/Lichess.html">Lichess</a></li>
+
+
+    <li class="section-title">
+      <a href="../../LichessAPI/Lichess-class.html#instance-properties">Properties</a>
+    </li>
+    <li><a href="../../LichessAPI/Lichess/accessToken.html">accessToken</a></li>
+    <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
+    <li><a href="../../LichessAPI/Lichess/lichessUri.html">lichessUri</a></li>
+    <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></li>
+
+    <li class="section-title"><a href="../../LichessAPI/Lichess-class.html#instance-methods">Methods</a></li>
+    <li><a href="../../LichessAPI/Lichess/abortGameAI.html">abortGameAI</a></li>
+    <li><a href="../../LichessAPI/Lichess/deleteToken.html">deleteToken</a></li>
+    <li><a href="../../LichessAPI/Lichess/getAuthUrl.html">getAuthUrl</a></li>
+    <li><a href="../../LichessAPI/Lichess/getToken.html">getToken</a></li>
+    <li><a href="../../LichessAPI/Lichess/makeMove.html">makeMove</a></li>
+    <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
+    <li><a href="../../LichessAPI/Lichess/resignGame.html">resignGame</a></li>
+    <li><a href="../../LichessAPI/Lichess/seekPlayer.html">seekPlayer</a></li>
+    <li><a href="../../LichessAPI/Lichess/startGameAI.html">startGameAI</a></li>
+    <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/toString.html">toString</a></li>
+
+    <li class="section-title inherited"><a href="../../LichessAPI/Lichess-class.html#operators">Operators</a></li>
+    <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/operator_equals.html">operator ==</a></li>
+
+
+
+
+</ol>
+
+  </div><!--/.sidebar-offcanvas-->
+
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div><!--/.sidebar-offcanvas-->
+
+</main>
+
+<footer>
+  <span class="no-break">
+    lichess
+      1.0.0
+  </span>
+
+  
+</footer>
+
+
+
+<script src="../../static-assets/highlight.pack.js?v1"></script>
+<script src="../../static-assets/script.js?v1"></script>
+
+
+
+</body>
+
+</html>
+
