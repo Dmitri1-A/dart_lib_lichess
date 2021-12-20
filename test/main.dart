@@ -18,9 +18,16 @@ Future<void> main() async {
   print("status game: " + gameData["status"]["name"]);
   print(lichess.lichessUri + "/" + gameId);
 
-  var stream = lichess.listenStreamGameState(gameId);
+  var stream = await lichess.listenStreamGameState(gameId);
 
-  stream.listen((event) {
-    print(event.statusCode.toString() + " --> " + event.body);
-  });
+  await for (var str in stream) {
+    switch (str['type']) {
+      case 'gameFull':
+        print(str['state']['moves']);
+        break;
+      case 'gameState':
+        print(str['moves']);
+        break;
+    }
+  }
 }

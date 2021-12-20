@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
 
 import 'OAuthGenerators.dart';
 import 'AppServer.dart';
@@ -438,14 +438,28 @@ class Lichess {
     return jsonDecode(response.body);
   }
 
-  Stream<Response> listenStreamGameState(String gameId) {
+  /// Функция трансляции состояния игры.
+  Stream<dynamic> listenStreamGameState(String gameId) async* {
     var url = Uri.parse(lichessUri + "/api/board/game/stream/" + gameId);
 
-    var stream = http.get(url, headers: {
-      "authorization": "Bearer " + _accessToken,
-      "accept": "application/json"
-    }).asStream();
+    http.Request request = http.Request("GET", url);
+    request.headers['authorization'] = 'Bearer ' + _accessToken;
+    request.headers['accept'] = 'application/json';
 
-    return stream;
+    var streamedResponse = await request.send();
+
+    if (streamedResponse.statusCode != 200) {
+      throw new Exception(
+          "Не удалось получить состояние игры. Статус код запроса: " +
+              streamedResponse.statusCode.toString());
+    }
+
+    await for (var item in streamedResponse.stream) {
+      var str = utf8.decoder.convert(item);
+
+      str = str.trim();
+
+      if (str.length > 0) yield jsonDecode(str);
+    }
   }
 }
