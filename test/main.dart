@@ -1,5 +1,5 @@
 import '../lib/LichessAPI.dart';
-import '../lib/LichessExeption.dart';
+// import '../lib/LichessExeption.dart';
 
 Future<void> main() async {
   Lichess lichess = new Lichess();
@@ -10,14 +10,17 @@ Future<void> main() async {
   // var token = await lichess.getToken();
   // print(token);
   // await lichess.deleteToken();
-  // lichess.accessToken = "lio_7ZAT0uRtfgHM9ymJVDrjdYTyPg7eVQIU";
-  // var gameData =
-  //     await lichess.startGameAI("1", "", "", "1", "white", "standard");
-  // print(gameData["id"]);
+  lichess.accessToken = "lio_7ZAT0uRtfgHM9ymJVDrjdYTyPg7eVQIU";
+  var gameData =
+      await lichess.startGameAI("1", "", "", "1", "white", "standard");
 
-  try {
-    await lichess.resignGame("1");
-  } on LichessException catch (e) {
-    print(e.message);
-  }
+  var gameId = gameData["id"];
+  print("status game: " + gameData["status"]["name"]);
+  print(lichess.lichessUri + "/" + gameId);
+
+  var stream = lichess.listenStreamGameState(gameId);
+
+  stream.listen((event) {
+    print(event.statusCode.toString() + " --> " + event.body);
+  });
 }

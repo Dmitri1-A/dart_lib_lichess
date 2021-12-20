@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 
 import 'OAuthGenerators.dart';
 import 'AppServer.dart';
@@ -435,5 +436,16 @@ class Lichess {
     }
 
     return jsonDecode(response.body);
+  }
+
+  Stream<Response> listenStreamGameState(String gameId) {
+    var url = Uri.parse(lichessUri + "/api/board/game/stream/" + gameId);
+
+    var stream = http.get(url, headers: {
+      "authorization": "Bearer " + _accessToken,
+      "accept": "application/json"
+    }).asStream();
+
+    return stream;
   }
 }
