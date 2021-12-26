@@ -7,6 +7,8 @@ import 'LichessAPI.dart';
 class AppServer {
   static HttpServer? _server;
 
+  HttpServer? get server => _server;
+
   /// Запускает сервер для получения запроса, который содержит code и state
   static Future<String> serverStart() async {
     _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
@@ -23,6 +25,9 @@ class AppServer {
 
     await _server?.forEach((HttpRequest request) {
       var parameters = request.uri.queryParameters;
+
+      request.response.headers
+          .add(HttpHeaders.contentTypeHeader, "text/html; charset=UTF-8");
 
       if (parameters['state'] == state) {
         if (parameters.containsKey("code")) {

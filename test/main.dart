@@ -11,10 +11,17 @@ Future<void> main() async {
     String url = await lichess.getAuthUrl();
     print(url);
 
-    // var token = await lichess.getToken();
-    // print(token);
-    // await lichess.deleteToken();
-    lichess.accessToken = "lio_lId2cuzlLWyodryfmk1PDxkydueQxvVR";
+    var token = await lichess.getToken();
+    print(token);
+    // lichess.accessToken = "lio_lId2cuzlLWyodryfmk1PDxkydueQxvVR";
+
+    var email = await lichess.getEmailAddress();
+    print("email: " + email['email']);
+
+    var profile = await lichess.getProfile();
+    print("username: " + profile['username']);
+
+    await lichess.deleteToken();
     // var gameData =
     //     await lichess.startGameAI("1", "", "", "1", "white", "standard");
 
@@ -35,32 +42,32 @@ Future<void> main() async {
     //   }
     // }
 
-    var stream = await lichess.listenStreamIncomingEvents();
+    // var stream = await lichess.listenStreamIncomingEvents();
 
-    lichess.seekPlayer('6', '30', '', 'standard', 'random');
+    // lichess.seekPlayer('6', '30', '', 'standard', 'random');
 
-    var gameId = "";
+    // var gameId = "";
 
-    await for (var str in stream) {
-      switch (str['type']) {
-        case 'gameStart':
-        case 'gameFinish':
-          gameId = str['game']['id'];
-          break;
-        case 'challenge':
-        case 'challengeCanceled':
-        case 'challengeDeclined':
-          gameId = str['challenge']['id'];
-          break;
-      }
+    // await for (var str in stream) {
+    //   switch (str['type']) {
+    //     case 'gameStart':
+    //     case 'gameFinish':
+    //       gameId = str['game']['id'];
+    //       break;
+    //     case 'challenge':
+    //     case 'challengeCanceled':
+    //     case 'challengeDeclined':
+    //       gameId = str['challenge']['id'];
+    //       break;
+    //   }
 
-      print("type: " + str['type']);
-      print(lichess.lichessUri + "/" + gameId);
+    //   print("type: " + str['type']);
+    //   print(lichess.lichessUri + "/" + gameId);
 
-      lichess.listenClose = true;
+    //   lichess.listenClose = true;
 
-      break;
-    }
+    //   break;
+    // }
   } on LichessException catch (ex) {
     print(ex.message);
   }

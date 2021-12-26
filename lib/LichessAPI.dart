@@ -499,4 +499,42 @@ class LichessAPI {
       }
     }
   }
+
+  Future<dynamic> getProfile() async {
+    var url = Uri.parse(lichessUri + "/api/account");
+
+    var response = await http.get(url, headers: {
+      "authorization": "Bearer " + _accessToken,
+      "accept": "application/json"
+    });
+
+    var statusCode = response.statusCode;
+
+    if (statusCode != 200) {
+      throw new Exception(
+          "Не удалось получить информацию об аккаунте. Статус код запроса: " +
+              response.statusCode.toString());
+    }
+
+    return jsonDecode(response.body);
+  }
+
+  Future<dynamic> getEmailAddress() async {
+    var url = Uri.parse(lichessUri + "/api/account/email");
+
+    var response = await http.get(url, headers: {
+      "authorization": "Bearer " + _accessToken,
+      "accept": "application/json"
+    });
+
+    var statusCode = response.statusCode;
+
+    if (statusCode != 200) {
+      throw new Exception(
+          "Не удалось получить email адрес. Статус код запроса: " +
+              response.statusCode.toString());
+    }
+
+    return jsonDecode(response.body);
+  }
 }
