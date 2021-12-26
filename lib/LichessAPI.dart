@@ -32,8 +32,8 @@ class LichessAPI {
   /// Code verifier для получения codeChallenge
   String _codeVerifier = "";
 
-  /// Возвращает Uri для получения кода авторизации (необходимо перейти по ссылке)
-  /// Запускает сервер, но не слушает запросы
+  /// Возвращает Uri для получения кода авторизации (необходимо перейти по ссылке).
+  /// Запускает сервер, но не слушает запросы.
   /// После вызова этого метода нужно вызвать [getToken]
   Future<String> getAuthUrl() async {
     _redirectUri = await AppServer.serverStart();
@@ -434,8 +434,9 @@ class LichessAPI {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new LichessException("Не удалось сделать ход. Статус код запроса: " +
-          response.statusCode.toString());
+      throw new LichessException(
+          "Не удалось сделать ход. Статус код запроса: " +
+              response.statusCode.toString());
     }
 
     return jsonDecode(response.body);
@@ -588,7 +589,8 @@ class LichessAPI {
 
   /// Получить информацию об аккаунте
   ///
-  /// Возвращает JSON строку с публичной информацией об аккаунте
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
   ///
   /// Формат json:
   ///
@@ -683,7 +685,8 @@ class LichessAPI {
 
   /// Получить email аккаунта
   ///
-  /// Возвращает JSON строку
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
   ///
   /// Формат JSON:
   ///
