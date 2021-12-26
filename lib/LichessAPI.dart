@@ -434,7 +434,7 @@ class LichessAPI {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception("Не удалось сделать ход. Статус код запроса: " +
+      throw new LichessException("Не удалось сделать ход. Статус код запроса: " +
           response.statusCode.toString());
     }
 
@@ -442,6 +442,64 @@ class LichessAPI {
   }
 
   /// Функция трансляции состояния игры.
+  ///
+  /// [gameId] - Идентификатор игры
+  ///
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
+  ///
+  /// Формат json:
+  ///
+  ///```json
+  ///{
+  /// "id": "LuGQwhBb",
+  ///"variant": {},
+  /// "speed": "blitz",
+  /// "perf": "blitz",
+  /// "rated": true,
+  /// "initialFen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+  /// "fen": "rnbqkb1r/1p1ppppp/p6n/2p4Q/8/1P2P3/P1PP1PPP/RNB1KBNR w KQkq - 0 4",
+  /// "player": "white",
+  /// "turns": 6,
+  /// "startedAtTurn": 0,
+  /// "source": "pool",
+  /// "status": {},
+  /// "createdAt": 1620029815106,
+  /// "lastMove": "c7c5"
+  /// },
+  /// {
+  /// "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w",
+  /// "wc": 180,
+  /// "bc": 180
+  /// },
+  /// {
+  /// "fen": "rnbqkbnr/pppppppp/8/8/8/4P3/PPPP1PPP/RNBQKBNR b",
+  /// "lm": "e2e3",
+  /// "wc": 180,
+  /// "bc": 180
+  /// },
+  /// {
+  /// "fen": "rnbqkb1r/pppppppp/7n/8/8/4P3/PPPP1PPP/RNBQKBNR w",
+  /// "lm": "g8h6",
+  /// "wc": 180,
+  /// "bc": 180
+  /// },
+  /// {
+  /// "fen": "rnbqkb1r/pppppppp/7n/8/8/1P2P3/P1PP1PPP/RNBQKBNR b",
+  /// "lm": "b2b3",
+  /// "wc": 177,
+  /// "bc": 180
+  /// },
+  /// {
+  /// "fen": "rnbqkb1r/1ppppppp/p6n/8/8/1P2P3/P1PP1PPP/RNBQKBNR w",
+  /// "lm": "a7a6",
+  /// "wc": 177,
+  /// "bc": 177
+  /// }
+  /// ```
+  ///
+  /// Также формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/streamGame
   Stream<dynamic> listenStreamGameState(String gameId) async* {
     var url = Uri.parse(lichessUri + "/api/board/game/stream/" + gameId);
 
@@ -452,7 +510,7 @@ class LichessAPI {
     var streamedResponse = await request.send();
 
     if (streamedResponse.statusCode != 200) {
-      throw new Exception(
+      throw new LichessException(
           "Не удалось получить состояние игры. Статус код запроса: " +
               streamedResponse.statusCode.toString());
     }
@@ -471,6 +529,34 @@ class LichessAPI {
     }
   }
 
+  /// Прослушивает поток входящих событий. Нужно при поиске игры с человеком.
+  ///
+  /// Возвращает [dynamic]. Как работать с возвращаемыми данными смотрите
+  /// в описании метода [startGameAI]
+  ///
+  /// Формат json:
+  ///
+  ///```json
+  ///{
+  /// "type": "challenge",
+  /// "challenge": {
+  /// "id": "7pGLxJ4F",
+  /// "url": "https://lichess.org/VU0nyvsW",
+  /// "status": "created",
+  /// "compat": {},
+  /// "challenger": {},
+  /// "destUser": {},
+  /// "variant": {},
+  /// "rated": true,
+  /// "timeControl": {},
+  /// "color": "random",
+  /// "speed": "rapid",
+  /// "perf": {}
+  /// }
+  /// ```
+  ///
+  /// Также формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/apiStreamEvent
   Stream<dynamic> listenStreamIncomingEvents() async* {
     var url = Uri.parse(lichessUri + "/api/stream/event");
 
@@ -481,7 +567,7 @@ class LichessAPI {
     var streamedResponse = await request.send();
 
     if (streamedResponse.statusCode != 200) {
-      throw new Exception(
+      throw new LichessException(
           "Не удалось получить входящие события. Статус код запроса: " +
               streamedResponse.statusCode.toString());
     }
@@ -500,6 +586,82 @@ class LichessAPI {
     }
   }
 
+  /// Получить информацию об аккаунте
+  ///
+  /// Возвращает JSON строку с публичной информацией об аккаунте
+  ///
+  /// Формат json:
+  ///
+  /// ```json
+  /// {
+  /// "id": "georges",
+  /// "username": "Georges",
+  /// "online": true,
+  /// "perfs": {
+  /// "chess960": {},
+  /// "atomic": {},
+  /// "racingKings": {},
+  /// "ultraBullet": {},
+  /// "blitz": {},
+  /// "kingOfTheHill": {},
+  /// "bullet": {},
+  /// "correspondence": {},
+  /// "horde": {},
+  /// "puzzle": {},
+  /// "classical": {},
+  /// "rapid": {},
+  /// "storm": {}
+  /// },
+  /// "createdAt": 1290415680000,
+  /// "disabled": false,
+  /// "tosViolation": false,
+  /// "profile": {
+  /// "country": "EC",
+  /// "location": "string",
+  /// "bio": "Free bugs!",
+  /// "firstName": "Thibault",
+  /// "lastName": "Duplessis",
+  /// "fideRating": 1500,
+  /// "uscfRating": 1500,
+  /// "ecfRating": 1500,
+  /// "links": "github.com/ornicar\r\ntwitter.com/ornicar"
+  /// },
+  /// "seenAt": 1522636452014,
+  /// "patron": true,
+  /// "verified": true,
+  /// "playTime": {
+  /// "total": 3296897,
+  /// "tv": 12134
+  /// },
+  /// "title": "NM",
+  /// "url": "https://lichess.org/@/georges",
+  /// "playing": "https://lichess.org/yqfLYJ5E/black",
+  /// "completionRate": 97,
+  /// "count": {
+  /// "all": 9265,
+  /// "rated": 7157,
+  /// "ai": 531,
+  /// "draw": 340,
+  /// "drawH": 331,
+  /// "loss": 4480,
+  /// "lossH": 4207,
+  /// "win": 4440,
+  /// "winH": 4378,
+  /// "bookmark": 71,
+  /// "playing": 6,
+  /// "import": 66,
+  /// "me": 0
+  /// },
+  /// "streaming": false,
+  /// "followable": true,
+  /// "following": false,
+  /// "blocking": false,
+  /// "followsYou": false
+  /// }
+  /// ```
+  ///
+  /// Также возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#tag/Account
   Future<dynamic> getProfile() async {
     var url = Uri.parse(lichessUri + "/api/account");
 
@@ -511,7 +673,7 @@ class LichessAPI {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception(
+      throw new LichessException(
           "Не удалось получить информацию об аккаунте. Статус код запроса: " +
               response.statusCode.toString());
     }
@@ -519,6 +681,20 @@ class LichessAPI {
     return jsonDecode(response.body);
   }
 
+  /// Получить email аккаунта
+  ///
+  /// Возвращает JSON строку
+  ///
+  /// Формат JSON:
+  ///
+  /// ```json
+  ///{
+  /// "email": "abathur@mail.org"
+  /// }
+  /// ```
+  ///
+  /// Формат возвращаемых данных можно посмотреть по ссылке:
+  /// * https://lichess.org/api#operation/accountEmail
   Future<dynamic> getEmailAddress() async {
     var url = Uri.parse(lichessUri + "/api/account/email");
 
@@ -530,7 +706,7 @@ class LichessAPI {
     var statusCode = response.statusCode;
 
     if (statusCode != 200) {
-      throw new Exception(
+      throw new LichessException(
           "Не удалось получить email адрес. Статус код запроса: " +
               response.statusCode.toString());
     }
