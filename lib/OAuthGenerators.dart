@@ -14,7 +14,7 @@ class OAuthGenerators {
     return encodeToString(bytes);
   }
 
-  /// Генерирует CodeChallenge
+  /// Генерирует CodeChallenge по [codeVerifier]
   static String generateCodeChallenge(String codeVerifier) {
     var bytes = ascii.encode(codeVerifier);
     Digest digest = sha256.convert(bytes);
