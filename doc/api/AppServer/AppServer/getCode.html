@@ -74,14 +74,38 @@
   await _server?.forEach((HttpRequest request) {
     var parameters = request.uri.queryParameters;
 
+    request.response.headers
+        .add(HttpHeaders.contentTypeHeader, &quot;text&#47;html; charset=UTF-8&quot;);
+
     if (parameters[&#39;state&#39;] == state) {
       if (parameters.containsKey(&quot;code&quot;)) {
-        request.response.write(&#39;Теперь вы можете закрыть браузер&#39;);
+        request.response.write(&#39;&#39;&#39;&lt;!DOCTYPE html&gt;
+    &lt;html lang=&quot;en&quot;&gt;
+    &lt;head&gt;
+        &lt;meta charset=&quot;UTF-8&quot;&gt;
+        &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot;&gt;
+        &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+        &lt;title&gt;Document&lt;&#47;title&gt;
+    &lt;&#47;head&gt;
+    &lt;body&gt;
+        &lt;h1&gt;Теперь вы можете закрыть Браузер&lt;&#47;h1&gt;
+    &lt;&#47;body&gt;
+    &lt;&#47;html&gt;&#39;&#39;&#39;);
         code = parameters[&#39;code&#39;] ?? &quot;&quot;;
       }
     } else {
-      request.response
-          .write(&#39;Возможно запрос был перехвачен, попробуйте ещё раз&#39;);
+      request.response.write(&#39;&#39;&#39;&lt;!DOCTYPE html&gt;
+        &lt;html lang=&quot;en&quot;&gt;
+        &lt;head&gt;
+            &lt;meta charset=&quot;UTF-8&quot;&gt;
+            &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot;&gt;
+            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+            &lt;title&gt;Document&lt;&#47;title&gt;
+        &lt;&#47;head&gt;
+        &lt;body&gt;
+            &lt;h1&gt;Возможно запрос был перехвачен, попробуйте ещё раз&lt;&#47;h1&gt;
+        &lt;&#47;body&gt;
+        &lt;&#47;html&gt;&#39;&#39;&#39;);
     }
 
     _server?.close();
@@ -117,11 +141,12 @@
     <li><a href="../../AppServer/AppServer/AppServer.html">AppServer</a></li>
 
 
-    <li class="section-title inherited">
+    <li class="section-title">
       <a href="../../AppServer/AppServer-class.html#instance-properties">Properties</a>
     </li>
     <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/hashCode.html">hashCode</a></li>
     <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/runtimeType.html">runtimeType</a></li>
+    <li><a href="../../AppServer/AppServer/server.html">server</a></li>
 
     <li class="section-title inherited"><a href="../../AppServer/AppServer-class.html#instance-methods">Methods</a></li>
     <li class="inherited"><a href="https://api.flutter.dev/flutter/dart-core/Object/noSuchMethod.html">noSuchMethod</a></li>
