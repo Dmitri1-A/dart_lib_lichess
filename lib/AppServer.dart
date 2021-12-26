@@ -26,12 +26,33 @@ class AppServer {
 
       if (parameters['state'] == state) {
         if (parameters.containsKey("code")) {
-          request.response.write('Теперь вы можете закрыть браузер');
+          request.response.write('''<!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta http-equiv="X-UA-Compatible" content="IE=edge">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Document</title>
+      </head>
+      <body>
+          <h1>Теперь вы можете закрыть Браузер</h1>
+      </body>
+      </html>''');
           code = parameters['code'] ?? "";
         }
       } else {
-        request.response
-            .write('Возможно запрос был перехвачен, попробуйте ещё раз');
+        request.response.write('''<!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta http-equiv="X-UA-Compatible" content="IE=edge">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Document</title>
+          </head>
+          <body>
+              <h1>Возможно запрос был перехвачен, попробуйте ещё раз</h1>
+          </body>
+          </html>''');
       }
 
       _server?.close();

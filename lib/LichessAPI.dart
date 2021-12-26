@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import 'OAuthGenerators.dart';
@@ -7,7 +6,7 @@ import 'AppServer.dart';
 import 'LichessExeption.dart';
 
 /// Класс для взаимодействия с LichessAPI
-class Lichess {
+class LichessAPI {
   /// Полный адрес Lichess
   String lichessUri = "https://lichess.org";
 
@@ -18,6 +17,8 @@ class Lichess {
   String get accessToken => _accessToken;
 
   set accessToken(value) => _accessToken = value;
+
+  bool listenClose = false;
 
   /// Uri перенаправления
   String _redirectUri = "";
@@ -192,7 +193,9 @@ class Lichess {
     return jsonDecode(response.body);
   }
 
-  /// Начинает поиск игры с реальным человеком
+  /// Начинает поиск игры с реальным человеком.
+  ///
+  /// Переда запуском необходимо запустить функцию [listenStreamIncomingEvents]
   ///
   /// [time] - [ 0 .. 180 ] Начальное время в минутах
   ///
@@ -444,7 +447,7 @@ class Lichess {
 
     http.Request request = http.Request("GET", url);
     request.headers['authorization'] = 'Bearer ' + _accessToken;
-    request.headers['accept'] = 'application/json';
+    request.headers['accept'] = 'application/x-ndjson';
 
     var streamedResponse = await request.send();
 
@@ -460,6 +463,40 @@ class Lichess {
       str = str.trim();
 
       if (str.length > 0) yield jsonDecode(str);
+
+      if (listenClose) {
+        listenClose = false;
+        break;
+      }
+    }
+  }
+
+  Stream<dynamic> listenStreamIncomingEvents() async* {
+    var url = Uri.parse(lichessUri + "/api/stream/event");
+
+    http.Request request = http.Request("GET", url);
+    request.headers['authorization'] = 'Bearer ' + _accessToken;
+    request.headers['accept'] = 'application/x-ndjson';
+
+    var streamedResponse = await request.send();
+
+    if (streamedResponse.statusCode != 200) {
+      throw new Exception(
+          "Не удалось получить входящие события. Статус код запроса: " +
+              streamedResponse.statusCode.toString());
+    }
+
+    await for (var item in streamedResponse.stream) {
+      var str = utf8.decoder.convert(item);
+
+      str = str.trim();
+
+      if (str.length > 0) yield jsonDecode(str);
+
+      if (listenClose) {
+        listenClose = false;
+        break;
+      }
     }
   }
 }
